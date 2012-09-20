@@ -3,6 +3,7 @@ use warnings;
 use Getopt::Long;
 use BIO::AlignIO;
 
+use mauveCleaner qw ( mauveParser );
 use pairwiseAlignment qw( pa );
 use stats qw ( statistics );
 
@@ -19,17 +20,14 @@ foreach (@filenames) {
 
 #Print statistics
 foreach (@statsArray) {
-	print $_;
+#	print $_;
 }
 
-# MSA
-#     my $multipleAlignments = qx(progressiveMauve inpara);
-# loop
-# fastaExtract.pl
-# consensus module
-# end loop
+#Run mauve
+my $concatFilenames = join (" ", @filenames);
+my $mauve = `progressiveMauve $concatFilenames`;
+$mauve = mauveParser($mauve); 
+
+print "$mauve";
 
 # PA
-# Send all combinations of filenames to NUCmer
-#my $variable = pa();
-#print $variable . "\n";

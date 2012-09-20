@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 
+use mauveCleaner qw ( mauveParser );
 use pairwiseAlignment qw( pa );
 use stats qw ( statistics );
 
@@ -18,7 +19,12 @@ foreach (@filenames) {
 
 #Print statistics
 foreach (@statsArray) {
-	print $_;
+#	print $_;
 }
 
+#Run mauve
+my $concatFilenames = join (" ", @filenames);
+my $mauve = `progressiveMauve $concatFilenames`;
+$mauve = mauveParser($mauve); 
 
+print "$mauve";

@@ -9,8 +9,7 @@ my $out;
 foreach (@files)
 {
 	open ($out, ">", "$_" . ".output");
-	$postfilter .= filter($_, %paired);
+	$postfilter = filter($_, %paired);
 	print $out $postfilter;
 	close $out;
-	$postfilter = "";
 }

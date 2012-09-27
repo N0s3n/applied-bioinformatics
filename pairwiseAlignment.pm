@@ -14,23 +14,24 @@ sub pa {
     my $fh1;
     my $fh2;
     my $nucmer_tempy;
-    my @filtered;
+    my %filtered;
     my $contigs;
 
 
     for my $qi (0..$#_) {
 	for my $ri (0..$#_) {
 
-	   open(my $fh1, "<",$_[$qi]) 
-			or die "cannot open < ".$_[$qi].": $!";
+	    #OY! Temporary for testing
+	    open(my $fh1, "<",$_[$qi]) 
+		or die "cannot open < ".$_[$qi].": $!";
 		    #open ($fh2,'<',$nucmer_tempy.".delta");
 		    #$assembly = read_file($_[$qi]);
 		    #$delta = read_file($nucmer_tempy.delta);
 
-		    @filtered = get_contigs($fh1);
+	    %filtered = get_contigs($fh1);
 	
-		    #Filter out contigs
-                    #get_info($nucmer_tempy);
+	    #Filter out contigs
+	    #get_info($nucmer_tempy);
 	    if ($qi != $ri) {
 
 		if (($qi != 0) & ($ri != 1)) {
@@ -38,8 +39,8 @@ sub pa {
 			or die "cannot open < ".$_[$qi].": $!";
 		    #open(my $fh2, "<",$nucmer_tempy.".delta") 
 #			or die "cannot open < ".$nucmer_tempy.".delta".": $!";
-
-		    $contigs = get_contigs($fh1);
+		    
+		    #$contigs = get_contigs($fh1);
 	
 		    #Filter out contigs
                     #get_info($nucmer_tempy);
@@ -61,20 +62,27 @@ sub pa {
     }
     #qx(rm -f "$nucmer_tempy.delta");
     #qx(rm -f "$nucmer_tempy.txt");
-    return @filtered;
+    return %filtered;
 }
 
 sub get_contigs {
-    my @contigs;
+    #my @contigs;
+    my %contigs;
+    my $c1;
+    my $c2;
 
     for my $fh (@_) {
 	for my $line (<$fh>) {
-#/^\d+\s\d+\s\d+\s\d+\s\d+\s\d+\s\d+$/
-	    if ($line =~ /^>([^\s]+)\s+[^\s]+/) {
-		push (@contigs,$1); 
+	    if ($line =~ /^>([^\s]+)\s+([^\s]+)/) {
+		$c1 = $1;
+		$c2 = $2;
+	    }
+	    if ($line =~ /^(\d+)\s(\d+)\s(\d+)\s(\d+)\s\d+\s\d+\s\d+$/) {
+		$contigs{$c1} = " c1: ".$1."\n";
+		$contigs{$c2} = " c2: ".$3."\n";
 	    }
 	}
     }
-    return @contigs;
+    return %contigs;
 }
 1

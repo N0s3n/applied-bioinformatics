@@ -20,4 +20,31 @@ sub mauveParser {
   my $finalAlignment = join("",@alignment);
   return $finalAlignment;
 }
+
+
+#getAlignments need alot of optimization. Now it takes 1 min to run.
+sub getAlignments {
+  my ($alignmentString, $noOfHeaders) = @_;
+  my @alignmentArray;
+  my $fasta = "";
+  my $headerCount = 0;
+  open my $fh,"<", \$alignmentString or die $!;
+  while (<$fh>) {
+    if (/=/) {
+      if ($headerCount == $noOfHeaders) {
+        push (@alignmentArray,$fasta);
+      }
+      $headerCount = 0;
+      $fasta = "";
+      next;
+    }
+    else {
+      if ($_ =~ /^>/) {
+        $headerCount++;
+      }
+    }
+    $fasta = join("",$fasta,$_);
+  }
+  return @alignmentArray;
+}
 1

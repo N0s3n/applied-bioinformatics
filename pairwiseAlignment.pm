@@ -66,29 +66,28 @@ sub pa {
     return @contigs;
 }
 
-#function that goes through the .delta file and stores the contig ids and their positions in a hash.
+#function that goes through the .delta file and stores the contig ids and their positions in an array.
 sub get_contigs {
     my @contigs;
-    my %contigs1;
-    my %contigs2;
     my $c1;
     my $c2;
 
+
     for my $fh (@_) {
+	my $i = 0;
 	for my $line (<$fh>) {
 	    if ($line =~ /^>([^\s]+)\s+([^\s]+)/) {
 		$c1 = $1;
 		$c2 = $2;
 	    }
 	    if ($line =~ /^(\d+)\s(\d+)\s(\d+)\s(\d+)\s\d+\s\d+\s\d+$/) {
-		$contigs1{$c1} = [$1,$2];
-		$contigs2{$c2} = [$3,$4];
+		@{$contigs[0][$i]} = ($c1,$1,$2);
+		@{$contigs[1][$i]} = ($c2,$3,$4);
+		$i = $i + 1;
 	    }
 	}
     }
 
-    $contigs[0] = \%contigs1;
-    $contigs[1] = \%contigs2;
     return @contigs;
 }
 

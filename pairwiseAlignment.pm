@@ -1,18 +1,16 @@
 package pairwiseAlignment;
-#use base qw( Exporter );
-#our @EXPORT_OK = qw(pa);
 use strict;
 use warnings;
-#use Exporter;
-#use File::Slurp;
 
 sub pa {
-    my $minid = 90;
-    my $minlength = 20;
     my $fhdelta;
-    my $subQ_tempy;
+    #Temporary filenames for subset of assemblyfile 
+    my $subQ_tempy; 
     my $subR_tempy;
+    #Temporary filename for deltafile
     my $nucmer_tempy;
+    #contigs array, in first level two elements. Element 0 contains all the contigs matching from query sequence.
+    #Element 1 contains all matches from reference sequence. The matches are represented as three dimensional arrays containing contig id, start of match and end of match.
     my @contigs;
     my @filenames = @_;
 
@@ -20,34 +18,35 @@ sub pa {
 	for my $ri (0..$#filenames) {
 	
 	    if ($qi != $ri) {
-
-
 		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
-		$subQ_tempy = "sub_tempQ".$qi.".fasta"; 
-		$subR_tempy = "sub_tempR".$ri.".fasta"; 
+
 		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
+		#TODO: error handling if nucmer fails
+
+		#Create the contigs array
 		open(my $fhdelta, "<",$nucmer_tempy.".delta") 
 		    or die "cannot open < ".$nucmer_tempy.".delta : $!";
 		@contigs = get_contigs($fhdelta);
 		close($fhdelta);
 		
+		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
+		$subQ_tempy = "sub_tempQ".$qi.".fasta"; 
+		$subR_tempy = "sub_tempR".$ri.".fasta"; 
 		open(my $fhq, ">",$subQ_tempy) 
 		    or die "cannot open < ".$subQ_tempy.": $!";
 		open(my $fhr, ">",$subR_tempy) 
 		    or die "cannot open < ".$subR_tempy.": $!";
-
 		print $fhq filter($filenames[$qi],@{$contigs[0]});
 		print $fhr filter($filenames[$ri],@{$contigs[1]});
 		$filenames[$qi] = $subQ_tempy;
 		$filenames[$ri] = $subR_tempy;
 		close($fhq);
 		close($fhr);
-
 	    }
 	}
     }
 
-    qx(rm -f "$nucmer_tempy.delta");
+    #qx(rm -f "$nucmer_tempy.delta");
     return @contigs;
 }
 
@@ -57,15 +56,15 @@ sub get_contigs {
     my $c1;
     my $c2;
 
-
     for my $fh (@_) {
 	my $i = 0;
 	for my $line (<$fh>) {
-	    if ($line =~ /^>([^\s]+)\s+([^\s]+)/) {
+	    if ($line =~ /^>([^\s]+)\s+([^\s]+)/) { #Matches the contig ids
 		$c1 = $1;
 		$c2 = $2;
 	    }
-	    if ($line =~ /^(\d+)\s(\d+)\s(\d+)\s(\d+)\s\d+\s\d+\s\d+$/) {
+	    if ($line =~ /^(\d+)\s(\d+)\s(\d+)\s(\d+)\s\d+\s\d+\s\d+$/) { #Matching of position information
+		#Storing contig ids and position information in the contig array
 		@{$contigs[0][$i]} = ($c1,$1,$2);
 		@{$contigs[1][$i]} = ($c2,$3,$4);
 		$i = $i + 1;
@@ -109,6 +108,7 @@ sub filter {
 			$content .= $in;
 		}
 	}
+	close($in);
 	return $content;
 }
 1

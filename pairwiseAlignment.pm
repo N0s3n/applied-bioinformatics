@@ -30,8 +30,8 @@ sub pa {
 		close($fhdelta);
 		
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
-		$subQ_tempy = "sub_tempQ".$qi.".fasta"; 
-		$subR_tempy = "sub_tempR".$ri.".fasta"; 
+		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
+		$subR_tempy = "sub_tempR".$ri.$qi.".fasta"; 
 		open(my $fhq, ">",$subQ_tempy) 
 		    or die "cannot open < ".$subQ_tempy.": $!";
 		open(my $fhr, ">",$subR_tempy) 

@@ -15,29 +15,34 @@ sub pa {
     my $fh2;
     my $nucmer_tempy;
     my @contigs;
-    #my $contigs;
+    my @filenames = @_;
 
-
-    for my $qi (0..$#_) {
-	for my $ri (0..$#_) {
+    for my $qi (0..$#filenames) {
+	for my $ri (0..$#filenames) {
 
 	    #OY! Temporary for testing
-	    open(my $fh1, "<",$_[$qi]) 
-		or die "cannot open < ".$_[$qi].": $!";
+	    #open(my $fh1, "<",$filenames[$qi]) 
+	#	or die "cannot open < ".$filenames[$qi].": $!";
 		    #open ($fh2,'<',$nucmer_tempy.".delta");
-		    #$assembly = read_file($_[$qi]);
+		    #$assembly = read_file($filenames[$qi]);
 		    #$delta = read_file($nucmer_tempy.delta);
 		    #open(my $fh2, "<",$nucmer_tempy.".delta") 
 #			or die "cannot open < ".$nucmer_tempy.".delta".": $!";
 
-	    @contigs = get_contigs($fh1);
+	 #   @contigs = get_contigs($fh1);
             #$A_sub_name = filter(%contigs, $fh2);
 	
 	    if ($qi != $ri) {
 
-		if (($qi != 0) & ($ri != 1)) {
-		    #open(my $fh1, "<",$_[$qi]) 
-		#	or die "cannot open < ".$_[$qi].": $!";
+		#if (($qi != 0) & ($ri != 1)) {
+		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
+		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
+
+		open(my $fh1, "<",$nucmer_tempy.".delta") 
+		    or die "cannot open < ".$nucmer_tempy.".delta : $!";
+		@contigs = get_contigs($fh1);
+		    #open(my $fh1, "<",$filenames[$qi]) 
+		#	or die "cannot open < ".$filenames[$qi].": $!";
 		    #open(my $fh2, "<",$nucmer_tempy.".delta") 
 #			or die "cannot open < ".$nucmer_tempy.".delta".": $!";
 		    
@@ -45,10 +50,9 @@ sub pa {
 	
 		    #Filter out contigs
                     #get_info($nucmer_tempy);
-		}
+		#}
 
-		#my $nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
-		#qx(nucmer --prefix="$nucmer_tempy" "$_[$qi]" "$_[$ri]");
+
 		#A = AiAj
 		#Ai = A_subi
 		#Aj = A_subj

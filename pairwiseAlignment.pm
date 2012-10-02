@@ -1,6 +1,7 @@
 package pairwiseAlignment;
 use strict;
 use warnings;
+use Data::Dumper;
 
 sub pa {
     my $fhdelta;
@@ -12,8 +13,10 @@ sub pa {
     #contigs array, in first level two elements. Element 0 contains all the contigs matching from query sequence.
     #Element 1 contains all matches from reference sequence. The matches are represented as three dimensional arrays containing contig id, start of match and end of match.
     my @contigs;
+    my @contigs_pos;
     my @contigs_p;
     my @filenames = @_;
+    my @pre_comb;
 
     for my $qi (0..$#filenames) {
 	for my $ri (0..$#filenames) {
@@ -29,12 +32,28 @@ sub pa {
 		    or die "cannot open < ".$nucmer_tempy.".delta : $!";
 		@contigs = get_contigs($fhdelta);
 		close($fhdelta);
-		@contigs_p = @contigs;#Store information for position checks in next iteration
 
-#		if ($ri!=($qi+1)) {
-		    #Check positions in here if it is not the first alignment performed.
-		    return position (@{$contigs_p[0]},@{$contigs[0]});
-#		}
+		#Check positions.
+		if (not(($qi==0)and($ri==1))) {
+		    if ($pre_comb[0]==$qi) {
+			my @a = position ($contigs_p[0],$contigs[0]);
+			$contigs[0] = [ @a ];		    
+		    }
+		    elsif ($pre_comb[0]==$ri) {
+			my @b = position ($contigs_p[0],$contigs[1]);
+			$contigs[1] = [ @b ];
+			return @b;
+		    }
+
+		    if ($pre_comb[1]==$qi) {
+			my @c = position ($contigs_p[1],$contigs[0]);
+			$contigs[0] = [ @c ];
+		    }
+		    elsif ($pre_comb[1]==$qi) {
+			my @d = position ($contigs_p[1],$contigs[1]);
+			$contigs[1] = [ @d ];
+		    }
+		}
 		
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
 		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
@@ -43,12 +62,15 @@ sub pa {
 		    or die "cannot open < ".$subQ_tempy.": $!";
 		open(my $fhr, ">",$subR_tempy) 
 		    or die "cannot open < ".$subR_tempy.": $!";
-		print $fhq filter($filenames[$qi],@{$contigs[0]});		
+		print $fhq filter($filenames[$qi],@{$contigs[0]});
 		print $fhr filter($filenames[$ri],@{$contigs[1]});
 		$filenames[$qi] = $subQ_tempy;
 		$filenames[$ri] = $subR_tempy;
 		close($fhq);
 		close($fhr);
+
+		@pre_comb = ($qi,$ri);
+		@contigs_p = @contigs;#Store information for position checks in next iteration
 	    }
 	}
     }
@@ -121,10 +143,9 @@ sub filter {
 
 sub position {
     my @pos;
-    my @c_p = @{$_[0]};
-    my @c = @{$_[1]};
+    my @c_p = @{ $_[0] };
+    my @c   = @{ $_[1] };
 
-
-    return @pos = @c;
+    return @pos = @_;
 }
-1
+1;

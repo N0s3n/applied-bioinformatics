@@ -1,7 +1,20 @@
 package pairwiseAlignment;
 use strict;
 use warnings;
-use Data::Dumper;
+use lib do {
+    use Cwd qw/realpath/;
+    realpath($0) =~ /^(.*)\//;
+    "$1/BioPerl-1.6.901/install/share/perl";
+};
+use Bio::Perl;
+
+sub min {
+    return (sort {$a<=>$b} @_)[0]; 
+}
+
+sub max {
+    return (sort {$b<=>$a} @_)[0]; 
+}
 
 sub pa {
     my $fhdelta;
@@ -42,7 +55,6 @@ sub pa {
 		    elsif ($pre_comb[0]==$ri) {
 			my @b = position ($contigs_p[0],$contigs[1]);
 			$contigs[1] = [ @b ];
-			return @b;
 		    }
 
 		    if ($pre_comb[1]==$qi) {
@@ -143,9 +155,33 @@ sub filter {
 
 sub position {
     my @pos;
-    my @c_p = @{ $_[0] };
-    my @c   = @{ $_[1] };
+    my @c_p = @{ $_[0] };#contig information from previous iteration
+    my @c   = @{ $_[1] };#contig information from current iteration
 
-    return @pos = @_;
+    for my $pre (@c_p) {
+
+	for my $cur (@c) {
+
+	    if ($pre->[0] eq $cur->[0]) {
+
+		my $startP = min($pre->[1],$pre->[2]);
+		my $endP = max($pre->[1],$pre->[2]);
+		my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
+		my $startC = min($cur->[1],$cur->[2]);
+		my $endC = max($cur->[1],$cur->[2]);
+		my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
+		my ($start,$end,$strand) = $rangeC->intersection($rangeP);
+
+		if(defined($start)) {
+		    push (@pos ,[ $pre->[0],$start,$end ]);
+		}
+
+	    }
+
+	}
+
+    }
+
+    return @pos;
 }
 1;

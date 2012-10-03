@@ -1,7 +1,6 @@
 use strict;
 use warnings;
 use Exporter;
-
 sub statistics {
 	my ($filename,$nvalue) = @_;
 	open my $fh,$filename or die "$!,$?";
@@ -21,16 +20,17 @@ sub statistics {
 	my @sort = sort{$b <=> $a} @array;
 	my $largestContig = $sort[0];
 	my $n50;
-	my $bla = $totLength*$nvalue*0.01;
+  my $n50ret = 0;
 	foreach my $val (@sort) {
 		$n50 += $val;
-		if ($n50 >=  $totLength*$nvalue*0.01) {
-			chomp $filename;
-			my $ret = "$filename \t Total length: $totLength \t n$nvalue:$val \t largest contig: $largestContig \t Sum: $n50 \tMåste överstiga: $bla\n";
-			return $ret;
-			last;
+		if ($n50 >=  $totLength*50*0.01 && $n50ret == 0) {
+			  $n50ret = $val; 
 		}
+    elsif($n50 >=  $totLength*90*0.01) {
+      chomp $filename;
+      my $ret = "$filename \t $totLength \t  $n50ret \t $val\t $largestContig \n";
+      return $ret;
+    }
 	}
-	
 }
 1

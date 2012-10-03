@@ -52,25 +52,25 @@ sub pa {
 		close($fhdelta);
 
 		#Check positions.
-		# if (not(($qi==0)and($ri==1))) {
-		#     if ($pre_comb[0]==$qi) {
-		# 	my %a = position (\%contigs_p1,\%contigs1);
-		# 	%contigs1 =  %a;		    
-		#     }
-		#     elsif ($pre_comb[0]==$ri) {
-		# 	my %b = position (\%contigs_p1,\%contigs2);
-		# 	%contigs2 = %b;
-		#     }
+		if (not(($qi==0)and($ri==1))) {
+		    if ($pre_comb[0]==$qi) {
+			#my %a = position (\%contigs_p1,\%contigs1);
+			%contigs1 =  position (\%contigs_p1,\%contigs1);		    
+		    }
+		    elsif ($pre_comb[0]==$ri) {
+			#my %b = position (\%contigs_p1,\%contigs2);
+			%contigs2 = position (\%contigs_p1,\%contigs2);;
+		    }
 
-		#     if ($pre_comb[1]==$qi) {
-		# 	my %c = position (\%contigs_p2,\%contigs1);
-		# 	%contigs1 = %c;
-		#     }
-		#     elsif ($pre_comb[1]==$qi) {
-		# 	my %d = position (\%contigs_p2,\%contigs2);
-		# 	%contigs2 = %d;
-		#     }
-		# }
+		    if ($pre_comb[1]==$qi) {
+			#my %c = position (\%contigs_p2,\%contigs1);
+			%contigs1 = position (\%contigs_p2,\%contigs1);;
+		    }
+		    elsif ($pre_comb[1]==$qi) {
+			#y %d = position (\%contigs_p2,\%contigs2);
+			%contigs2 = position (\%contigs_p2,\%contigs2);;
+		    }
+		}
 		
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
 		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
@@ -88,12 +88,12 @@ sub pa {
 		# close($fhq);
 		# close($fhr);
 
-#    open(my $fhtest, ">>","test_contig_array".$qi."_".$ri.".txt") 
-#	or die "cannot open < ".$nucmer_tempy.".delta : $!";
-#		print $fhtest "Contig:\n";
-#		print $fhtest Dumper \@contigs;
-#		print $fhtest "\n";
-#		close($fhtest);
+   open(my $fhtest, ">>","test_contig_array".$qi."_".$ri.".txt") 
+	or die "cannot open < ".$nucmer_tempy.".delta : $!";
+		print $fhtest "Contig:\n";
+		print $fhtest Dumper \%contigs1;
+		print $fhtest "\n";
+		close($fhtest);
 
 		@pre_comb = ($qi,$ri);
 		%contigs_p1 = %contigs1;#Store information for position checks in next iteration
@@ -103,7 +103,7 @@ sub pa {
     }
 
     #qx(rm -f "$nucmer_tempy.delta");
-    return %contigs1;
+    return \%contigs1,\%contigs2;
 }
 
 #function that goes through the .delta file and stores the contig ids and their positions in an array.
@@ -113,7 +113,7 @@ sub get_contigs {
     my ($c1,$c2);
 
     for my $fh (@_) {
-	#my $i = 0;
+
 	for my $line (<$fh>) {
 
 	    my (@pos1,@pos2);
@@ -123,8 +123,6 @@ sub get_contigs {
 	    }
 	    if ($line =~ /^(\d+)\s(\d+)\s(\d+)\s(\d+)\s\d+\s\d+\s\d+$/) { #Matching of position information
 		#Storing contig ids and position information in the contig array
-		#@{$contigs[0][$i]} = ($c1,$1,$2);
-		#@{$contigs[1][$i]} = ($c2,$3,$4);
 
 		if (defined($contigs2{$c1})) {
 		    @pos1 = @{ $contigs1{$c1} };
@@ -137,53 +135,12 @@ sub get_contigs {
 		$contigs1{$c1} = [ @pos1 ];
 		push (@pos2,[$3,$4]);
 		$contigs2{$c2} = [ @pos2 ];
-
-		#$i = $i + 1;
 	    }
 	}
     }
 
     return \%contigs1,\%contigs2;
 }
-
-# sub filter {
-# 	my ($filename, $contigs) = @_;
-# 	my @keys = keys(%{$contigs});
-# 	my $boolean = 0;
-# #	for my $index (0 .. $#contigs)
-# #	{
-# #	    push (@keys, $contigs[$index][0]);
-# #	}
-
-   
-	
-# 	my $found = 0;
-# 	my $content = "";
-# 	open (my $in, "<", "$filename");
-# 	while (my $in = <$in>)
-# 	{
-# 		if($in =~ /^>([^\s]+)/)
-# 		{
-# 			my $contigname = $1;
-# 			$found = 0;
-# 			foreach (@keys)
-#			{
-#				if ($_ eq $contigname)
-#				{
-#					$found = 1;
-#					$content .= $in;
-#					last();
-#				}
-#			}
-#		}
-#		elsif ($found == 1)
-#		{
-#			$content .= $in;
-#		}
-#	}
-#	close($in);
-#	return $content;
-#}
 
 sub filter {
 	my ($filename, $output, $cont) = @_;
@@ -199,8 +156,6 @@ sub filter {
 			if ($cid eq $contigname)
 			{
 				$hits++;
-				#print $contigs[$index][0]."\t".$contigname."\n";
-				#print $index . "\t" . $seq->length . "\t$contigs[$index][2]\n";
 				#my $subseq = $seq->subseq($contigs[$index][1],$contigs[$index][2]);
 				#$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits");
 				$filtered->write_seq($seq);
@@ -209,35 +164,62 @@ sub filter {
 	}
 }
 
-# sub position {
-#     my @pos;
-#     my %c_p = %{ $_[0] };#contig information from previous iteration
-#     my %c   = $_[1];#contig information from current iteration
+sub position {
+    my %cpos;
+    my %c_p = %{ $_[0] };#contig information from previous iteration
+    my %c   = %{ $_[1] };#contig information from current iteration
 
-#     for my $pre (@c_p) {
+    for my $cid (keys(%c)) {
+	for my $cidp (keys(%c_p)) {
+	    if (defined($c{$cid})) {
+		my @pos;
+		for my $po_cur (@{ $c{$cid} }) {
+		    if (defined($c_p{$cid})) {
+			for my $po_pre (@{ $c_p{$cidp} }) {
+			    my $startP = min($po_pre->[0],$po_pre->[1]);
+			    my $endP = max($po_pre->[0],$po_pre->[1]);
+			    my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
+			    my $startC = min($po_cur->[0],$po_cur->[1]);
+			    my $endC = max($po_cur->[0],$po_cur->[1]);
+			    my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
+			    my ($start,$end,$strand) = $rangeC->intersection($rangeP);
 
-# 	for my $cur (@c) {
+			    if(defined($start)) {
+				push (@pos ,[ $start,$end ]);
+				$cpos{$cid} = [ @pos ];
+			    }
+			}
+			
+		    }
+		}
+	    }
+	}
+    }
 
-# 	    if ($pre->[0] eq $cur->[0]) {
+    # for my $pre (@c_p) {
 
-# 		my $startP = min($pre->[1],$pre->[2]);
-# 		my $endP = max($pre->[1],$pre->[2]);
-# 		my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
-# 		my $startC = min($cur->[1],$cur->[2]);
-# 		my $endC = max($cur->[1],$cur->[2]);
-# 		my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
-# 		my ($start,$end,$strand) = $rangeC->intersection($rangeP);
+    # 	for my $cur (@c) {
 
-# 		if(defined($start)) {
-# 		    push (@pos ,[ $pre->[0],$start,$end ]);
-# 		}
+    # 	    if ($pre->[0] eq $cur->[0]) {
 
-# 	    }
+    # 		my $startP = min($pre->[1],$pre->[2]);
+    # 		my $endP = max($pre->[1],$pre->[2]);
+    # 		my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
+    # 		my $startC = min($cur->[1],$cur->[2]);
+    # 		my $endC = max($cur->[1],$cur->[2]);
+    # 		my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
+    # 		my ($start,$end,$strand) = $rangeC->intersection($rangeP);
 
-# 	}
+    # 		if(defined($start)) {
+    # 		    push (@pos ,[ $pre->[0],$start,$end ]);
+    # 		}
 
-#     }
+    # 	    }
 
-#     return @pos;
-# }
+    # 	}
+
+    # }
+
+    return %cpos = %cpos;
+}
 1;

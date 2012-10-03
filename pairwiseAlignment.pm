@@ -20,19 +20,16 @@ sub max {
 
 sub pa {
     my $fhdelta;
-    #Temporary filenames for subset of assemblyfile 
+    #Temporary filenames for subset of assemblyfiles 
     my $subQ_tempy; 
     my $subR_tempy;
     #Temporary filename for deltafile
     my $nucmer_tempy;
-    #contigs array, in first level two elements. Element 0 contains all the contigs matching from query sequence.
-    #Element 1 contains all matches from reference sequence. The matches are represented as three dimensional arrays containing contig id, start of match and end of match.
     my (%contigs1,%contigs2);
     my @contigs_pos;
     my (%contigs_p1,%contigs_p2);
     my @filenames = @_;
-    my @pre_comb;
-
+    my @pre_comb;#keeps track of which assemblies were combined in the previous iteration
 
     for my $qi (0..$#filenames) {
 	for my $ri (0..$#filenames) {
@@ -50,24 +47,21 @@ sub pa {
 		%contigs1 = %$c1;
 		%contigs2 = %$c2;
 		close($fhdelta);
+		qx(rm -f $nucmer_tempy."delta");
 
 		#Check positions.
 		if (not(($qi==0)and($ri==1))) {
 		    if ($pre_comb[0]==$qi) {
-			#my %a = position (\%contigs_p1,\%contigs1);
 			%contigs1 =  position (\%contigs_p1,\%contigs1);		    
 		    }
 		    elsif ($pre_comb[0]==$ri) {
-			#my %b = position (\%contigs_p1,\%contigs2);
 			%contigs2 = position (\%contigs_p1,\%contigs2);;
 		    }
 
 		    if ($pre_comb[1]==$qi) {
-			#my %c = position (\%contigs_p2,\%contigs1);
 			%contigs1 = position (\%contigs_p2,\%contigs1);;
 		    }
 		    elsif ($pre_comb[1]==$qi) {
-			#y %d = position (\%contigs_p2,\%contigs2);
 			%contigs2 = position (\%contigs_p2,\%contigs2);;
 		    }
 		}
@@ -75,25 +69,17 @@ sub pa {
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
 		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
 		$subR_tempy = "sub_tempR".$ri.$qi.".fasta"; 
-		# open(my $fhq, ">",$subQ_tempy) 
-		#     or die "cannot open < ".$subQ_tempy.": $!";
-		# open(my $fhr, ">",$subR_tempy) 
-		#     or die "cannot open < ".$subR_tempy.": $!";
-#		print $fhq 
 		filter($filenames[$qi],$subQ_tempy,\%contigs1);
-#		print $fhr 
 		filter($filenames[$ri],$subR_tempy,\%contigs2);
 		$filenames[$qi] = $subQ_tempy;
 		$filenames[$ri] = $subR_tempy;
-		# close($fhq);
-		# close($fhr);
 
-   open(my $fhtest, ">>","test_contig_array".$qi."_".$ri.".txt") 
-	or die "cannot open < ".$nucmer_tempy.".delta : $!";
-		print $fhtest "Contig:\n";
-		print $fhtest Dumper \%contigs1;
-		print $fhtest "\n";
-		close($fhtest);
+   # open(my $fhtest, ">>","test_contig_array".$qi."_".$ri.".txt") 
+   # 	or die "cannot open < ".$nucmer_tempy.".delta : $!";
+   # 		print $fhtest "Contig:\n";
+   # 		print $fhtest Dumper \%contigs1;
+   # 		print $fhtest "\n";
+   # 		close($fhtest);
 
 		@pre_comb = ($qi,$ri);
 		%contigs_p1 = %contigs1;#Store information for position checks in next iteration
@@ -102,7 +88,7 @@ sub pa {
 	}
     }
 
-    #qx(rm -f "$nucmer_tempy.delta");
+    qx(rm -f sub_temp*.fasta);
     return \%contigs1,\%contigs2;
 }
 
@@ -142,6 +128,7 @@ sub get_contigs {
     return \%contigs1,\%contigs2;
 }
 
+# Function that filters away contigs and creates subsets of original assembly files.
 sub filter {
 	my ($filename, $output, $cont) = @_;
 	my @contigs = keys (%{$cont});

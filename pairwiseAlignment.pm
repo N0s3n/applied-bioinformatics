@@ -24,7 +24,7 @@ sub savey {
     open(my $fhtest, ">>",$filename) 
 	or die "cannot open < ".$filename." : $!";
     print $fhtest "Thingy:\n";
-    print $fhtest Dumper $thingy;
+    print $fhtest Dumper \$thingy;
     print $fhtest "\n";
     close($fhtest);
 }
@@ -51,12 +51,11 @@ sub pa {
 		$nucmer_tempy = "unf_nucmer_out_temp".$qi."_".$ri; 
 		$names[$i] = $nucmer_tempy.".delta";
 
+		#TODO: error handling if nucmer fails
 		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
 		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri.".delta"; 
 		qx(delta-filter -i 99 -l 100 $names[$i] > "$nucmer_tempy");		
 		qx(rm $names[$i]);
-
-		#TODO: error handling if nucmer fails
 
 		#Create the contigs array
 		open(my $fhdelta, "<",$nucmer_tempy) 
@@ -65,6 +64,9 @@ sub pa {
 		%contigs1 = %$c1;
 		%contigs2 = %$c2;
 		close($fhdelta);
+
+		# Save the contig info somehow
+
 		#qx(rm -f $nucmer_tempy."delta");
 
 
@@ -95,6 +97,7 @@ sub pa {
 
 		#Sets the iformation needed in next iteration.
 		@pre_comb = ($qi,$ri);
+		$contigs_pos[$i] = \( \%contigs1, \%contigs2 );
 		%contigs_p1 = %contigs1;#Store information for position checks in next iteration
 		%contigs_p2 = %contigs2;#Store information for position checks in next iteration
 		$i++;
@@ -104,9 +107,10 @@ sub pa {
 
     #return tempname (@names);
     #qx(rm -f sub_temp*.fasta);
-    my $test = makeFasta(\%contigs1,$subQ_tempy);
+    makeFasta(\%contigs1,$subQ_tempy);
+    savey("blah.txt",@contigs_pos);
 
-    return $test; 
+    return $#contigs_pos; 
 }
 
 sub tempname {
@@ -117,8 +121,9 @@ sub tempname {
     return @_;
 }
 
+# Here the final result gets saved into a fasta file
 sub makeFasta {
-    my %fast;
+
     my %contigs = %{$_[0]};
     my $filename = $_[1];
     my @keys = keys (%contigs);
@@ -133,17 +138,22 @@ sub makeFasta {
 	{
 	    if ($cid eq $contigname)
 	    {
-		my @t = @{$contigs{$cid}};
-		my $start = $t[0][0];
-		my $end = $t[0][1];
-		$fast{$cid} = [$start,$end];
-		my $subseq = $seq->subseq($start,$end);
-		$seq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname");
-		$filtered->write_seq($seq);
+
+		my @t = @{$contigs{$cid}};#Array of all the position hits of a given contig id
+
+		    
+		for my $pos (@t) {
+
+		    my $start = $pos->[0];
+		    my $end = $pos->[1];
+		    my $subseq = $seq->subseq($start,$end);
+		    my $seq2 = Bio::Seq->new(-seq => "$subseq", -id => "$contigname");
+		    $filtered->write_seq($seq2);
+
+		} 
 	    }
 	}
     }
-    return \%fast;
 }
 
 #function that goes through the .delta file and stores the contig ids and their positions in an array.

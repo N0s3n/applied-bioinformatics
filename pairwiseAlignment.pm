@@ -48,16 +48,19 @@ sub pa {
 	for my $ri (0..$#filenames) {
 	
 	    if ($qi != $ri) {
-		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
+		$nucmer_tempy = "unf_nucmer_out_temp".$qi."_".$ri; 
 		$names[$i] = $nucmer_tempy.".delta";
 
 		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
-		qx(delta-filter -i=95 $names[$i] > $names[$i]);
+		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri.".delta"; 
+		qx(delta-filter -i 99 -l 100 $names[$i] > "$nucmer_tempy");		
+		qx(rm $names[$i]);
+
 		#TODO: error handling if nucmer fails
 
 		#Create the contigs array
-		open(my $fhdelta, "<",$nucmer_tempy.".delta") 
-		    or die "cannot open < ".$nucmer_tempy.".delta : $!";
+		open(my $fhdelta, "<",$nucmer_tempy) 
+		    or die "cannot open < ".$nucmer_tempy." : $!";
 		my ($c1,$c2) = get_contigs($fhdelta);
 		%contigs1 = %$c1;
 		%contigs2 = %$c2;

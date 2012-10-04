@@ -37,6 +37,17 @@ print $tb;
 #$mauve = mauveParser($mauve); 
 #print "$mauve";
 
+#Extract the common contigs from mauve output
+#my $fil = read_file("output.txt");
+#my @commonContigs = getAlignments($fil,scalar(@filenames));
+#my @commonContigs = getAlignments($mauve,scalar(@filenames));
+
+
+
+
+#Parse the .backbone file
+#--------------------------------------------------------------------------------
+
 #Get positions of each file
 my @assemblyCtgCoo;
 my @chompedSeq;
@@ -79,9 +90,6 @@ foreach my $filename (@filenames) {
 
     #print "\n";
 
-
-
-
     push @chompedSeq, collapseAssembly($filename);
     @{$difficultContigs[$currentAssembly]} =  getSubString($chompedSeq[$currentAssembly], @{$unmatchedContigs[$currentAssembly]});
     $currentAssembly++;
@@ -97,56 +105,5 @@ foreach my $pos (@position) {
 #print Dumper @position;
 
 #print $difficultContigs[1][1];
-  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Test
-# ----------------------------------------------
-
-#my $fil = read_file("en.txt");
-#print $fil;
-#my $cons = mkConsensus($fil);
-#print $cons;
-#print $fil;
-#my @test = getAlignments($fil,3);
-#print $test[1];
-#open (my $FILE,">","en.txt") or die $!;
-#print $FILE $test[2];
-#close $FILE;
-#print $test[2];
-
-
-#my @test = getAlignments($mauve,3);
-#my @consensus;
-#foreach (@test) {
-#  my $consensus =  mkConsensus($_);
-#  push(@consensus, $consensus);
-#  print $consensus;
-#}
-#my $t = mkConsensus($test[1]);
-#print $t;
 # PA

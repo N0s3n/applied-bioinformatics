@@ -18,6 +18,17 @@ sub max {
     return (sort {$b<=>$a} @_)[0]; 
 }
 
+sub savey {
+    my ($filename,$thingy) = @_;
+
+    open(my $fhtest, ">>",$filename) 
+	or die "cannot open < ".$filename." : $!";
+    print $fhtest "Thingy:\n";
+    print $fhtest Dumper $thingy;
+    print $fhtest "\n";
+    close($fhtest);
+}
+
 sub pa {
     my $fhdelta;
     #Temporary filenames for subset of assemblyfiles 
@@ -30,14 +41,18 @@ sub pa {
     my (%contigs_p1,%contigs_p2);
     my @filenames = @_;
     my @pre_comb;#keeps track of which assemblies were combined in the previous iteration
+    my $i = 0;
+    my @names;
 
     for my $qi (0..$#filenames) {
 	for my $ri (0..$#filenames) {
 	
 	    if ($qi != $ri) {
 		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
+		$names[$i] = $nucmer_tempy.".delta";
 
 		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
+		qx(delta-filter -i=95 $names[$i] > $names[$i]);
 		#TODO: error handling if nucmer fails
 
 		#Create the contigs array
@@ -47,7 +62,8 @@ sub pa {
 		%contigs1 = %$c1;
 		%contigs2 = %$c2;
 		close($fhdelta);
-		qx(rm -f $nucmer_tempy."delta");
+		#qx(rm -f $nucmer_tempy."delta");
+
 
 		#Check positions.
 		if (not(($qi==0)and($ri==1))) {
@@ -68,33 +84,67 @@ sub pa {
 		
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
 		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
-		$subR_tempy = "sub_tempR".$ri.$qi.".fasta"; 
+		$subR_tempy = "sub_tempR".$qi.$ri.".fasta"; 
 		filter($filenames[$qi],$subQ_tempy,\%contigs1);
 		filter($filenames[$ri],$subR_tempy,\%contigs2);
 		$filenames[$qi] = $subQ_tempy;
 		$filenames[$ri] = $subR_tempy;
 
-   # open(my $fhtest, ">>","test_contig_array".$qi."_".$ri.".txt") 
-   # 	or die "cannot open < ".$nucmer_tempy.".delta : $!";
-   # 		print $fhtest "Contig:\n";
-   # 		print $fhtest Dumper \%contigs1;
-   # 		print $fhtest "\n";
-   # 		close($fhtest);
-
+		#Sets the iformation needed in next iteration.
 		@pre_comb = ($qi,$ri);
 		%contigs_p1 = %contigs1;#Store information for position checks in next iteration
 		%contigs_p2 = %contigs2;#Store information for position checks in next iteration
+		$i++;
 	    }
 	}
     }
 
-    qx(rm -f sub_temp*.fasta);
-    return \%contigs1,\%contigs2;
+    #return tempname (@names);
+    #qx(rm -f sub_temp*.fasta);
+    my $test = makeFasta(\%contigs1,$subQ_tempy);
+
+    return $test; 
+}
+
+sub tempname {
+    for my $delta (@_) {
+	#my ($a,$b) = get_contigs($delta);
+    }
+
+    return @_;
+}
+
+sub makeFasta {
+    my %fast;
+    my %contigs = %{$_[0]};
+    my $filename = $_[1];
+    my @keys = keys (%contigs);
+
+    my $fh = Bio::SeqIO->new(-file => "$filename", -format => "fasta");
+    my $filtered = Bio::SeqIO->new(-file => ">finalpaoutput.fasta", -format => 'fasta' );
+    while (my $seq = $fh->next_seq)
+    {
+	my $contigname = $seq->display_id;
+
+	for my $cid (@keys)
+	{
+	    if ($cid eq $contigname)
+	    {
+		my @t = @{$contigs{$cid}};
+		my $start = $t[0][0];
+		my $end = $t[0][1];
+		$fast{$cid} = [$start,$end];
+		my $subseq = $seq->subseq($start,$end);
+		$seq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname");
+		$filtered->write_seq($seq);
+	    }
+	}
+    }
+    return \%fast;
 }
 
 #function that goes through the .delta file and stores the contig ids and their positions in an array.
 sub get_contigs {
-    #my @contigs;
     my (%contigs1,%contigs2);
     my ($c1,$c2);
 
@@ -163,17 +213,20 @@ sub position {
 		for my $po_cur (@{ $c{$cid} }) {
 		    if (defined($c_p{$cid})) {
 			for my $po_pre (@{ $c_p{$cidp} }) {
-			    my $startP = min($po_pre->[0],$po_pre->[1]);
-			    my $endP = max($po_pre->[0],$po_pre->[1]);
-			    my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
-			    my $startC = min($po_cur->[0],$po_cur->[1]);
-			    my $endC = max($po_cur->[0],$po_cur->[1]);
-			    my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
-			    my ($start,$end,$strand) = $rangeC->intersection($rangeP);
 
-			    if(defined($start)) {
-				push (@pos ,[ $start,$end ]);
-				$cpos{$cid} = [ @pos ];
+			    if ($cid eq $cidp) {
+				my $startP = min($po_pre->[0],$po_pre->[1]);
+				my $endP = max($po_pre->[0],$po_pre->[1]);
+				my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
+				my $startC = min($po_cur->[0],$po_cur->[1]);
+				my $endC = max($po_cur->[0],$po_cur->[1]);
+				my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
+				my ($start,$end,$strand) = $rangeC->intersection($rangeP);
+
+				if(defined($start)) {
+				    push (@pos ,[ $start,$end ]);
+				    $cpos{$cid} = [ @pos ];
+				}
 			    }
 			}
 			
@@ -183,29 +236,43 @@ sub position {
 	}
     }
 
-    # for my $pre (@c_p) {
+    return %cpos = %cpos;
+}
 
-    # 	for my $cur (@c) {
+sub position2 {
+    my %cpos;
+    my %c1 = %{ $_[0] };
+    my %c2 = %{ $_[1] };
 
-    # 	    if ($pre->[0] eq $cur->[0]) {
+    for my $cid1 (keys(%c1)) {
+	for my $cid2 (keys(%c2)) {
+	    if (defined($c1{$cid1})) {
+		my @pos;
+		for my $po_cur (@{ $c1{$cid1} }) {
+		    if (defined($c2{$cid2})) {
+			for my $po_pre (@{ $c2{$cid2} }) {
 
-    # 		my $startP = min($pre->[1],$pre->[2]);
-    # 		my $endP = max($pre->[1],$pre->[2]);
-    # 		my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
-    # 		my $startC = min($cur->[1],$cur->[2]);
-    # 		my $endC = max($cur->[1],$cur->[2]);
-    # 		my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
-    # 		my ($start,$end,$strand) = $rangeC->intersection($rangeP);
+			    if($cid1 eq $cid2) {
+				my $startP = min($po_pre->[0],$po_pre->[1]);
+				my $endP = max($po_pre->[0],$po_pre->[1]);
+				my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
+				my $startC = min($po_cur->[0],$po_cur->[1]);
+				my $endC = max($po_cur->[0],$po_cur->[1]);
+				my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
+				my ($start,$end,$strand) = $rangeC->intersection($rangeP);
 
-    # 		if(defined($start)) {
-    # 		    push (@pos ,[ $pre->[0],$start,$end ]);
-    # 		}
-
-    # 	    }
-
-    # 	}
-
-    # }
+				if(defined($start)) {
+				    push (@pos ,[ $start,$end ]);
+				    $cpos{$cid1} = [ @pos ];
+				}
+			    }
+			}
+			
+		    }
+		}
+	    }
+	}
+    }
 
     return %cpos = %cpos;
 }

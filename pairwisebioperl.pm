@@ -25,7 +25,9 @@ sub pa {
 	    if ($qi != $ri) {
 		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
 
-		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
+		qx(nucmer -l 10 --prefix="$nucmer_tempy.pre" "$filenames[$qi]" "$filenames[$ri]");
+		qx(delta-filter -i 99.9 "$nucmer_tempy.pre.delta" > "$nucmer_tempy.delta");
+		qx(rm -f *.pre.*);
 		#TODO: error handling if nucmer fails
 
 		#Create the contigs array
@@ -58,15 +60,15 @@ sub pa {
 		
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
 		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
-		$subR_tempy = "sub_tempR".$ri.$qi.".fasta"; 
+		$subR_tempy = "sub_tempR".$qi.$ri.".fasta"; 
 		#Output now occurs in filter().
 		filter($filenames[$qi],$subQ_tempy,@{$contigs[0]});
 		filter($filenames[$ri],$subR_tempy,@{$contigs[1]});
 		$filenames[$qi] = $subQ_tempy;
 		$filenames[$ri] = $subR_tempy;
 
-		@pre_comb = ($qi,$ri);
-		@contigs_p = @contigs;#Store information for position checks in next iteration
+		#@pre_comb = ($qi,$ri);
+		#@contigs_p = @contigs;#Store information for position checks in next iteration
 	    }
 	}
     }
@@ -112,7 +114,7 @@ sub get_contigs {
 sub filter {
 	my ($filename, $output, @contigs) = @_;
 	my $fh = Bio::SeqIO->new(-file => "$filename", -format => "fasta");
-	my $filtered = Bio::SeqIO->new(-file => ">$output", -format => 'fasta' );
+	my $filtered = Bio::SeqIO->new(-file => ">$output", -format => "fasta" );
 	while (my $seq = $fh->next_seq)
 	{
 		my $contigname = $seq->display_id;
@@ -121,12 +123,22 @@ sub filter {
 		{
 			if ($contigs[$index][0] eq $contigname)
 			{
+				#print $#contigs . "\t";
 				$hits++;
 				#print $contigs[$index][0]."\t".$contigname."\n";
 				#print $index . "\t" . $seq->length . "\t$contigs[$index][2]\n";
 				my $subseq = $seq->subseq($contigs[$index][1],$contigs[$index][2]);
-				$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits");
-				$filtered->write_seq($subseq);
+				my $descr = 0;
+				if ($seq->desc)
+				{
+					$descr = $seq->desc;
+					$descr++;
+				}
+				#if (length($subseq) > 200)
+				#{
+					$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits", -desc => $descr);
+					$filtered->write_seq($subseq);
+				#}
 			}
 		}
 	}

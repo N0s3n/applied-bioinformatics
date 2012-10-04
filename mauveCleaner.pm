@@ -22,29 +22,71 @@ sub mauveParser {
 }
 
 
-#getAlignments need alot of optimization. Now it takes 1 min to run.
+
 sub getAlignments {
-  my ($alignmentString, $noOfHeaders) = @_;
-  my @alignmentArray;
-  my $fasta = "";
+
   my $headerCount = 0;
+  my @alignmentArray;
+  my $fasta = ">";
+  my $loopCount = 1;
+  my $sequence = "";
+  my ($alignmentString, $noOfHeaders) = @_;
   open my $fh,"<", \$alignmentString or die $!;
+    
   while (<$fh>) {
-    if (/=/) {
+    #print "$loopCount \n";
+    if (/^>\s(\d+):(\d+)-(\d+)/) {
+      $fasta .= "$2-$3 ";
+      if (/0-0/) {
+        $headerCount = 0;
+      }
+      elsif ($1 != $loopCount) {
+        $headerCount = 0;
+      }
+    $loopCount++;
+    $headerCount++;
+    $sequence = "";
+    }
+
+    elsif (/^=/) {
       if ($headerCount == $noOfHeaders) {
+        $fasta .="\n$sequence";
         push (@alignmentArray,$fasta);
       }
       $headerCount = 0;
-      $fasta = "";
-      next;
+      $fasta = ">";
+      $loopCount = 1;
     }
+
     else {
-      if ($_ =~ /^>/) {
-        $headerCount++;
-      }
+      $sequence .= $_;
     }
-    $fasta = join("",$fasta,$_);
   }
   return @alignmentArray;
 }
+#sub fgetAlignments {
+#  my ($alignmentString, $noOfHeaders) = @_;
+#  my @alignmentArray;
+#  my $fasta = "";
+#  my $headerCount = 0;
+#  open my $fh,"<", \$alignmentString or die $!;
+#  while (<$fh>) {
+#    if (/=/) {
+#      if ($headerCount == $noOfHeaders) {
+#        push (@alignmentArray,$fasta);
+#      }
+#      $headerCount = 0;
+#      $fasta = "";
+#      next;
+#    }
+#    else {
+#      if ($_ =~ /^>/) {
+#        $headerCount++;
+#      }
+#    }
+#    $fasta = join("",$fasta,$_);
+#    $fasta .= $_;
+#  }
+#  return @alignmentArray;
+#}
 1

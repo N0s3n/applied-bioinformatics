@@ -39,20 +39,21 @@ sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignmen
     my (%contigs1,%contigs2); # Current contig hashes. Maps contig id to start and end position of matches in alignments
     my (%contigs_p1,%contigs_p2); # Previous contig hashes. Maps contig id to start and end position of matches in alignments
     #my @contigs_pos; # For storage of all contig hashes.
-    my ($finalfile,$minl,$ml,$f);
+    my ($finalfile,$minl,$mi,$f);
     my @filenames = @{$_[0]};
     if (defined($_[1])) {
+        # Sets the options if an options hash has been provided in the function call to pa()
 	my %pa_options = %{$_[1]};
 	$finalfile = $pa_options{'fn'};
 	$minl = $pa_options{'minl'};
-	$ml = $pa_options{'ml'};
+	$mi = $pa_options{'mi'};
 	$f = $pa_options{'format'};
     }
     else {
         #defaults
 	$finalfile = "finalpaoutput";
 	$minl = 10;
-	$ml = 99;
+	$mi = 99;
 	$f = "fasta";
     }
 
@@ -60,7 +61,7 @@ sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignmen
 
     my @pre_comb;#keeps track of which assemblies were combined in the previous iteration
     my $i = 0; # Counter variable
-    my @names; 
+    my @names; # Helps in moving around the unfiltered delta-files 
     my %r_ids; # Contig ids of removed contigs
 
     for my $qi (0..$#filenames) {
@@ -73,7 +74,7 @@ sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignmen
 		#TODO: error handling if nucmer fails
 		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
 		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri.".delta"; 
-		qx(delta-filter -i $ml -l 100 $names[$i] > "$nucmer_tempy");		
+		qx(delta-filter -i $mi -l 100 $names[$i] > "$nucmer_tempy");		
 		qx(rm $names[$i]); # Cleanup of unfiltered deltafiles
 
 		#Create the contigs array
@@ -127,9 +128,10 @@ sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignmen
 	$rem .= "\nNumber of removed contigs in assembly ".$a.": ".$#r."\n"; 
     }
     savey($finalfile."removed_contigs.txt",\%r_ids);
-    #qx(rm -f sub_temp*.fasta);# Cleanup
+    savey($finalfile."removed_contigs_total.txt",$rem);
+    qx(rm -f sub_temp*.fasta);# Cleanup
 
-    return $rem; 
+    return $finalfile.".".$f; 
 }
 
 

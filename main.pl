@@ -107,3 +107,9 @@ foreach my $pos (@position) {
 #print $difficultContigs[1][1];
 
 # PA
+my %pa_options;# This is an optional second parameter to pa(). If given it must contain:
+# keys: ('fn','minl','mi','format') (string,int,float,string)
+# fn = filename, with no format identifier, eg. 'finalfile'
+# minl = minimum length which will take away intersection(found in subroutine position() in pairwiseAlignment.pm) two matched positions in the same contig
+# mi, minimum % identity between matched contigs 
+my $removed_ctg = pa(\@filenames);

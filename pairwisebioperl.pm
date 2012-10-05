@@ -1,4 +1,4 @@
-package pairwiseAlignment;
+package pairwisebioperl;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -96,7 +96,7 @@ sub get_contigs {
 			@{$contigs[0][$i]} = ($c1,$1,$2);
 		}
                 else {
-                        @{$contigs[0][$i]} = ($c2,$2,$1);
+                        @{$contigs[0][$i]} = ($c1,$2,$1);
                 }
 		if ($3 < $4) {
 			@{$contigs[1][$i]} = ($c2,$3,$4);
@@ -134,11 +134,11 @@ sub filter {
 					$descr = $seq->desc;
 					$descr++;
 				}
-				#if (length($subseq) > 200)
-				#{
+				if (length($subseq) > 200)
+				{
 					$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits", -desc => $descr);
 					$filtered->write_seq($subseq);
-				#}
+				}
 			}
 		}
 	}

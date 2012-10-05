@@ -39,7 +39,25 @@ sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignmen
     my (%contigs1,%contigs2); # Current contig hashes. Maps contig id to start and end position of matches in alignments
     my (%contigs_p1,%contigs_p2); # Previous contig hashes. Maps contig id to start and end position of matches in alignments
     #my @contigs_pos; # For storage of all contig hashes.
-    my @filenames = @_;
+    my ($finalfile,$minl,$ml,$f);
+    my @filenames = @{$_[0]};
+    if (defined($_[1])) {
+	my %pa_options = %{$_[1]};
+	$finalfile = $pa_options{'fn'};
+	$minl = $pa_options{'minl'};
+	$ml = $pa_options{'ml'};
+	$f = $pa_options{'format'};
+    }
+    else {
+        #defaults
+	$finalfile = "finalpaoutput";
+	$minl = 10;
+	$ml = 99;
+	$f = "fasta";
+    }
+
+
+
     my @pre_comb;#keeps track of which assemblies were combined in the previous iteration
     my $i = 0; # Counter variable
     my @names; 
@@ -55,7 +73,7 @@ sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignmen
 		#TODO: error handling if nucmer fails
 		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
 		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri.".delta"; 
-		qx(delta-filter -i 99 -l 100 $names[$i] > "$nucmer_tempy");		
+		qx(delta-filter -i $ml -l 100 $names[$i] > "$nucmer_tempy");		
 		qx(rm $names[$i]); # Cleanup of unfiltered deltafiles
 
 		#Create the contigs array
@@ -102,28 +120,30 @@ sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignmen
 	    }
 	}
     }
-    makeFasta(\%contigs1,$subQ_tempy);
+    makeFinalFile(\%contigs1,$subQ_tempy,$finalfile.".".$f,$f);
     my $rem = '';
     for $a (keys(%r_ids)) {
 	my @r = keys(%{$r_ids{$a}});
 	$rem .= "\nNumber of removed contigs in assembly ".$a.": ".$#r."\n"; 
     }
-    savey("removed_contigs.txt",\%r_ids);
+    savey($finalfile."removed_contigs.txt",\%r_ids);
     #qx(rm -f sub_temp*.fasta);# Cleanup
 
     return $rem; 
 }
 
 
-# Here the final result gets saved into a fasta file
-sub makeFasta {
+# Here the final result gets saved into a file
+sub makeFinalFile {
 
     my %contigs = %{$_[0]};
-    my $filename = $_[1];
+    my $filenamein = $_[1];
+    my $filenameout = $_[2];
+    my $format = $_[3];
     my @keys = keys (%contigs);
 
-    my $fh = Bio::SeqIO->new(-file => "$filename", -format => "fasta");
-    my $filtered = Bio::SeqIO->new(-file => ">finalpaoutput3.genbank", -format => 'genbank' );
+    my $fh = Bio::SeqIO->new(-file => "$filenamein", -format => "fasta");
+    my $filtered = Bio::SeqIO->new(-file => ">$filenameout", -format => "$format" );
     while (my $seq = $fh->next_seq)
     {
 	my $contigname = $seq->display_id;

@@ -1,15 +1,16 @@
-use strict;
-use warnings;
-use Exporter;
-sub statistics {
-	my ($filename,$nvalue) = @_;
-	open my $fh,$filename or die "$!,$?";
-	my @array;
-	my $count=-1;
-	my $totLength = 0;
-	while (my $line = <$fh>) {
-		if ($line =~ /^>/) {
-			$count++
+    use strict;
+    use warnings;
+    use Exporter;
+    sub statistics {
+      my ($filename,$nvalue) = @_;
+      open my $fh,$filename or die "$!,$?";
+      my @array;
+      my $count=-1;
+      my $totLength = 0;
+      my $numOfContigs = 0;
+      while (my $line = <$fh>) {
+      if ($line =~ /^>/) {
+        $count++
 		}
 		else {
 			$array[$count] += length($line)-1; 
@@ -28,7 +29,8 @@ sub statistics {
 		}
     elsif($n50 >=  $totLength*90*0.01) {
       chomp $filename;
-      my $ret = "$filename \t $totLength \t  $n50ret \t $val\t $largestContig \n";
+      $count++;
+      my $ret = "$filename \t $totLength \t $count\t  $n50ret \t $val\t $largestContig \n";
       return $ret;
     }
 	}

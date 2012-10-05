@@ -1,7 +1,7 @@
 package pairwiseAlignment;
 use strict;
 use warnings;
-use lib do {
+use lib do { # Incase bioperl is not installed using aptitude or apt-get. Library containing the bioperl library should be placed in subfolder relative to this file. The part "BioPerl-1.6.901/install/share/perl" bellow is that subfolders path relative to the pairwiseAlignment.pm file.
     use Cwd qw/realpath/;
     realpath($0) =~ /^(.*)\//;
     "$1/BioPerl-1.6.901/install/share/perl";
@@ -10,18 +10,18 @@ use Bio::Perl;
 use Data::Dumper;
 use Bio::SeqIO;
 
-sub min {
+sub min { # Takes a any number of numbers and returns the smallest
     return (sort {$a<=>$b} @_)[0]; 
 }
 
-sub max {
+sub max { # Takes a any number of numbers and returns the biggest
     return (sort {$b<=>$a} @_)[0]; 
 }
 
-sub savey {
+sub savey { # Helper function to save output to a textfile so you can check that stuff are correct. Not needed in finished program.
     my ($filename,$thingy) = @_;
 
-    open(my $fhtest, ">>",$filename) 
+    open(my $fhtest, ">",$filename) 
 	or die "cannot open < ".$filename." : $!";
     print $fhtest "Thingy:\n";
     print $fhtest Dumper \$thingy;
@@ -29,20 +29,21 @@ sub savey {
     close($fhtest);
 }
 
-sub pa {
+sub pa { # Main subroutine. Calls uses the other subroutines in pairwiseAlignment.pm to perform the iterative pa. It's final product is a fasta file called finalpaoutput.fasta
     my $fhdelta;
     #Temporary filenames for subset of assemblyfiles 
     my $subQ_tempy; 
     my $subR_tempy;
     #Temporary filename for deltafile
     my $nucmer_tempy;
-    my (%contigs1,%contigs2);
-    my @contigs_pos;
-    my (%contigs_p1,%contigs_p2);
+    my (%contigs1,%contigs2); # Current contig hashes. Maps contig id to start and end position of matches in alignments
+    my (%contigs_p1,%contigs_p2); # Previous contig hashes. Maps contig id to start and end position of matches in alignments
+    #my @contigs_pos; # For storage of all contig hashes.
     my @filenames = @_;
     my @pre_comb;#keeps track of which assemblies were combined in the previous iteration
-    my $i = 0;
-    my @names;
+    my $i = 0; # Counter variable
+    my @names; 
+    my %r_ids; # Contig ids of removed contigs
 
     for my $qi (0..$#filenames) {
 	for my $ri (0..$#filenames) {
@@ -55,7 +56,7 @@ sub pa {
 		qx(nucmer --prefix="$nucmer_tempy" "$filenames[$qi]" "$filenames[$ri]");
 		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri.".delta"; 
 		qx(delta-filter -i 99 -l 100 $names[$i] > "$nucmer_tempy");		
-		qx(rm $names[$i]);
+		qx(rm $names[$i]); # Cleanup of unfiltered deltafiles
 
 		#Create the contigs array
 		open(my $fhdelta, "<",$nucmer_tempy) 
@@ -65,10 +66,7 @@ sub pa {
 		%contigs2 = %$c2;
 		close($fhdelta);
 
-		# Save the contig info somehow
-
-		#qx(rm -f $nucmer_tempy."delta");
-
+		qx(rm -f $nucmer_tempy."delta"); # Done with the deltafiles. Cleanup.
 
 		#Check positions.
 		if (not(($qi==0)and($ri==1))) {
@@ -90,36 +88,32 @@ sub pa {
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
 		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
 		$subR_tempy = "sub_tempR".$qi.$ri.".fasta"; 
-		filter($filenames[$qi],$subQ_tempy,\%contigs1);
-		filter($filenames[$ri],$subR_tempy,\%contigs2);
+		%r_ids = filter($filenames[$qi],$subQ_tempy,\%contigs1,\%r_ids,$qi,$i);
+		%r_ids = filter($filenames[$ri],$subR_tempy,\%contigs2,\%r_ids,$ri,$i);
 		$filenames[$qi] = $subQ_tempy;
 		$filenames[$ri] = $subR_tempy;
 
 		#Sets the iformation needed in next iteration.
 		@pre_comb = ($qi,$ri);
-		$contigs_pos[$i] = \( \%contigs1, \%contigs2 );
+		#$contigs_pos[$i] = \( \%contigs1, \%contigs2 );
 		%contigs_p1 = %contigs1;#Store information for position checks in next iteration
 		%contigs_p2 = %contigs2;#Store information for position checks in next iteration
 		$i++;
 	    }
 	}
     }
-
-    #return tempname (@names);
-    #qx(rm -f sub_temp*.fasta);
     makeFasta(\%contigs1,$subQ_tempy);
-    savey("blah.txt",@contigs_pos);
-
-    return $#contigs_pos; 
-}
-
-sub tempname {
-    for my $delta (@_) {
-	#my ($a,$b) = get_contigs($delta);
+    my $rem = '';
+    for $a (keys(%r_ids)) {
+	my @r = keys(%{$r_ids{$a}});
+	$rem .= "\nNumber of removed contigs in assembly ".$a.": ".$#r."\n"; 
     }
+    savey("removed_contigs.txt",\%r_ids);
+    #qx(rm -f sub_temp*.fasta);# Cleanup
 
-    return @_;
+    return $rem; 
 }
+
 
 # Here the final result gets saved into a fasta file
 sub makeFasta {
@@ -129,13 +123,15 @@ sub makeFasta {
     my @keys = keys (%contigs);
 
     my $fh = Bio::SeqIO->new(-file => "$filename", -format => "fasta");
-    my $filtered = Bio::SeqIO->new(-file => ">finalpaoutput.fasta", -format => 'fasta' );
+    my $filtered = Bio::SeqIO->new(-file => ">finalpaoutput3.genbank", -format => 'genbank' );
     while (my $seq = $fh->next_seq)
     {
 	my $contigname = $seq->display_id;
 
 	for my $cid (@keys)
 	{
+
+
 	    if ($cid eq $contigname)
 	    {
 
@@ -172,7 +168,7 @@ sub get_contigs {
 	    }
 	    if ($line =~ /^(\d+)\s(\d+)\s(\d+)\s(\d+)\s\d+\s\d+\s\d+$/) { #Matching of position information
 		#Storing contig ids and position information in the contig array
-
+	     
 		if (defined($contigs2{$c1})) {
 		    @pos1 = @{ $contigs1{$c1} };
 		}
@@ -193,31 +189,44 @@ sub get_contigs {
 
 # Function that filters away contigs and creates subsets of original assembly files.
 sub filter {
-	my ($filename, $output, $cont) = @_;
+	my ($filename, $output, $cont,$rem, $assembly,$align) = @_;
 	my @contigs = keys (%{$cont});
-	my $fh = Bio::SeqIO->new(-file => "$filename", -format => "fasta");
-	my $filtered = Bio::SeqIO->new(-file => ">$output", -format => 'fasta' );
-	while (my $seq = $fh->next_seq)
-	{
+	my %removed_ids = %{$rem};
+	my %clist;
+	if (defined($removed_ids{$assembly})) {
+	    %clist = %{$removed_ids{$assembly}};
+	}
+	my $fh = Bio::SeqIO->new(-file => "$filename", 
+				 -format => "fasta");
+	my $filtered = Bio::SeqIO->new(-file => ">$output", 
+				       -format => 'fasta' );
+	while (my $seq = $fh->next_seq) {
 		my $contigname = $seq->display_id;
 		my $hits = 0;
-		for my $cid (@contigs)
-		{
-			if ($cid eq $contigname)
-			{
-				$hits++;
+		for my $cid (@contigs) {
+			if ($cid eq $contigname) {
+
+                                # This part is left out for now but can be useful later to see how it changes the result
 				#my $subseq = $seq->subseq($contigs[$index][1],$contigs[$index][2]);
 				#$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits");
-				$filtered->write_seq($seq);
+			
+			    $hits++;
+			    $filtered->write_seq($seq);
 			}
 		}
+		if ($hits == 0) {		    
+		    $clist{$contigname} = $align;
+		    $removed_ids{$assembly} = \%clist;
+		}
 	}
+	return %removed_ids;
 }
 
 sub position {
     my %cpos;
     my %c_p = %{ $_[0] };#contig information from previous iteration
     my %c   = %{ $_[1] };#contig information from current iteration
+    my $minlength = 10;
 
     for my $cid (keys(%c)) {
 	for my $cidp (keys(%c_p)) {
@@ -236,47 +245,12 @@ sub position {
 				my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
 				my ($start,$end,$strand) = $rangeC->intersection($rangeP);
 
+				
 				if(defined($start)) {
+				    if ((  $end-$start ) > $minlength ) {
 				    push (@pos ,[ $start,$end ]);
 				    $cpos{$cid} = [ @pos ];
-				}
-			    }
-			}
-			
-		    }
-		}
-	    }
-	}
-    }
-
-    return %cpos = %cpos;
-}
-
-sub position2 {
-    my %cpos;
-    my %c1 = %{ $_[0] };
-    my %c2 = %{ $_[1] };
-
-    for my $cid1 (keys(%c1)) {
-	for my $cid2 (keys(%c2)) {
-	    if (defined($c1{$cid1})) {
-		my @pos;
-		for my $po_cur (@{ $c1{$cid1} }) {
-		    if (defined($c2{$cid2})) {
-			for my $po_pre (@{ $c2{$cid2} }) {
-
-			    if($cid1 eq $cid2) {
-				my $startP = min($po_pre->[0],$po_pre->[1]);
-				my $endP = max($po_pre->[0],$po_pre->[1]);
-				my $rangeP = Bio::Range->new(-start => $startP, -end => $endP);
-				my $startC = min($po_cur->[0],$po_cur->[1]);
-				my $endC = max($po_cur->[0],$po_cur->[1]);
-				my $rangeC = Bio::Range->new(-start => $startC, -end => $endC);
-				my ($start,$end,$strand) = $rangeC->intersection($rangeP);
-
-				if(defined($start)) {
-				    push (@pos ,[ $start,$end ]);
-				    $cpos{$cid1} = [ @pos ];
+				    }
 				}
 			    }
 			}

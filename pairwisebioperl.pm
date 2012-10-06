@@ -23,11 +23,11 @@ sub pa {
 	for my $ri (0..$#filenames) {
 	
 	    if ($qi != $ri) {
-		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
+		$nucmer_tempy = "output/nucmer_out_temp".$qi."_".$ri; 
 
 		qx(nucmer -l 10 --prefix="$nucmer_tempy.pre" "$filenames[$qi]" "$filenames[$ri]");
 		qx(delta-filter -i 99.9 "$nucmer_tempy.pre.delta" > "$nucmer_tempy.delta");
-		qx(rm -f *.pre.*);
+		qx(rm -f $nucmer_tempy.pre.delta);
 		#TODO: error handling if nucmer fails
 
 		#Create the contigs array
@@ -36,39 +36,14 @@ sub pa {
 		@contigs = get_contigs($fhdelta);
 		close($fhdelta);
 
-		#Check positions.
-		#if (not(($qi==0)and($ri==1))) {
-		#    if ($pre_comb[0]==$qi) {
-	#		my @a = position ($contigs_p[0],$contigs[0]);
-#			$contigs[0] = [ @a ];		    
-#		    }
-#		    elsif ($pre_comb[0]==$ri) {
-#			my @b = position ($contigs_p[0],$contigs[1]);
-#			$contigs[1] = [ @b ];
-#			return @b;
-#		    }
-#
-#		    if ($pre_comb[1]==$qi) {
-#			my @c = position ($contigs_p[1],$contigs[0]);
-#			$contigs[0] = [ @c ];
-#		    }
-#		    elsif ($pre_comb[1]==$qi) {
-#			my @d = position ($contigs_p[1],$contigs[1]);
-#			$contigs[1] = [ @d ];
-#		    }
-#		}
-		
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
-		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
-		$subR_tempy = "sub_tempR".$qi.$ri.".fasta"; 
+		$subQ_tempy = "output/sub_tempQ".$qi.$ri.".fasta"; 
+		$subR_tempy = "output/sub_tempR".$qi.$ri.".fasta"; 
 		#Output now occurs in filter().
 		filter($filenames[$qi],$subQ_tempy,@{$contigs[0]});
 		filter($filenames[$ri],$subR_tempy,@{$contigs[1]});
 		$filenames[$qi] = $subQ_tempy;
 		$filenames[$ri] = $subR_tempy;
-
-		#@pre_comb = ($qi,$ri);
-		#@contigs_p = @contigs;#Store information for position checks in next iteration
 	    }
 	}
     }
@@ -113,7 +88,9 @@ sub get_contigs {
 
 sub filter {
 	my ($filename, $output, @contigs) = @_;
+	#Reads the sequence being filtered:
 	my $fh = Bio::SeqIO->new(-file => "$filename", -format => "fasta");
+	#Opens a new file to write to:
 	my $filtered = Bio::SeqIO->new(-file => ">$output", -format => "fasta" );
 	while (my $seq = $fh->next_seq)
 	{
@@ -121,22 +98,28 @@ sub filter {
 		my $hits = 0;
 		for my $index (0 .. $#contigs)
 		{
+			#Tests the contig names in the delta files versus the contig names in the sequence being filtered:
 			if ($contigs[$index][0] eq $contigname)
 			{
+				#The three lines below exist for testing purposes:
 				#print $#contigs . "\t";
-				$hits++;
 				#print $contigs[$index][0]."\t".$contigname."\n";
-				#print $index . "\t" . $seq->length . "\t$contigs[$index][2]\n";
+				#print $index . "\t" . $seq->length . "\t$contigs[$index][2]\n"; 
+				#The hit number is concatenated to the contig name.
+				$hits++;
+				#Extracts the subsequences that match:
 				my $subseq = $seq->subseq($contigs[$index][1],$contigs[$index][2]);
-				my $descr = 0;
-				if ($seq->desc)
+				#An unsuccesful experiment in storing info in the descriptions.
+				#my $descr = 0;
+				#if ($seq->desc)
+				#{
+				#	$descr = $seq->desc;
+				#	$descr++;
+				#}
+				if (length($subseq) > 200) #Filters out hits shorter than the threshold (200, in this case).
 				{
-					$descr = $seq->desc;
-					$descr++;
-				}
-				if (length($subseq) > 200)
-				{
-					$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits", -desc => $descr);
+					#Writes a new sequence to the $output file:
+					$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits");
 					$filtered->write_seq($subseq);
 				}
 			}

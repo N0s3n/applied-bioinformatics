@@ -15,9 +15,9 @@ use consensus qw ( mkConsensus );
 use backbone qw ( getPos collapseAssembly unmatchedCoo );
 
 #Declare variables
-my $nvalue = 50;
+#my $nvalue = 50;
+#GetOptions ("nvalue=i" => \$nvalue);
 my @filenames = @ARGV;
-GetOptions ("nvalue=i" => \$nvalue);
 
 #Create output folder
 mkdir "output";
@@ -25,16 +25,16 @@ mkdir "output";
 #Basic statistics
 my @statsArray;
 foreach (@filenames) {	
-	my $statsOutput = statistics($_,$nvalue);
+	my $statsOutput = statistics($_);
 	push (@statsArray,$statsOutput);
 }
 
-#Print statistics
+#Print statistics to output/statistics.txt
 my $statTable = Text::Table->new("Assembly", "Length", "NuOfCon","N50", "N90", "Largest Contig");
 $statTable->load(@statsArray);
-open my $myfile, ">output/statistics.txt";
-print $myfile $statTable;
-close $myfile;
+#open my $myfile, ">output/statistics.txt";
+#print $myfile $statTable;
+#close $myfile;
 #print $statTable;
 
 #Run mauve
@@ -48,66 +48,56 @@ my $fil = read_file("output.txt");
 my @commonContigs = getAlignments($fil,scalar(@filenames));
 #my @commonContigs = getAlignments($mauve,scalar(@filenames));
 
-#Print contigs to file
+#Print common contigs to file
 my $commonOutput = join "", @commonContigs; 
-open $myfile, ">output/commonContigs.fasta";
+#Clean spaces and gaps from sequence
+#my $test = '';
+#open my $fh,"<", \$commonOutput or die $!;
+#while (<$fh>) {
+#  if (/^>/) {
+#     $test.=$_;
+#  }
+#  else
+#}
+open my $myfile, ">output/commonContigs.fasta";
 print $myfile $commonOutput;
 close $myfile;
 #print $commonOutput;
 
 
-#Run statistics on the commonContigs
-print statistics("output/commonContigs.fasta");
-$statTable->load(statistics("output/commonContigs.fasta"));
-open my $myfile, ">>output/statistics.txt";
-print $myfile $statTable;
-close $myfile;
-
 #Parse the .backbone file
 #--------------------------------------------------------------------------------
 
 #Get positions of each file
+#Define variables
 my @assemblyCtgCoo;
 my @chompedSeq;
 my $currentAssembly = 0;
 my @difficultContigs;
-my @unmatchedContigs = unmatchedCoo(); 
 my @position;
 
-
-#print Dumper \$unmatchedContigs[0];
-#print "Unmatched contigs:\n";
-for (my $i = 0; $i <3; $i++) {
-  for (my $y = 0; $y < scalar(@{$unmatchedContigs[$i]}); $y++) {
-    #print join ("\t", @{$unmatchedContigs[$i][$y]});
-    #print "\t\t";
-  }
-  #print "\n\n";
-}
-#print "Coordinates:\n";
-
+#Store the coordinates of each unmatched sequence. The array is an array in an array in an array. 
+#The first level is which assembly the coordinate comes from. The second level is which unmatched sequence. And the third level is either the start or the end of the coordinate. 
+my @unmatchedContigs = unmatchedCoo(); 
 
 foreach my $filename (@filenames) {
+    #getPos will store all the starting positions of the contigs in an assembly.
     my @coordinates = getPos($filename);
     push @assemblyCtgCoo, \@coordinates;
- 
-    #print join ("\t", @{$assemblyCtgCoo[$currentAssembly]});
-    #print "\n";
-    #Detta är sjölanders ansvar.
-      foreach my $unmatched (@{$unmatchedContigs[$currentAssembly]}) {
-        my @tempArray = grep @{$assemblyCtgCoo[$currentAssembly]}[$_] >= $unmatched->[0], 0 .. $#{$assemblyCtgCoo[$currentAssembly]};
-        push @{$position[$currentAssembly]}, $tempArray[0]; 
-        #last
-      #print "$#{$assemblyCtgCoo[$currentAssembly]} \t $unmatched->[0]\n";
+
+    #This was an attempt to map specific unmatched contigs back to which assembly and position it came from. But mauve seemed to append over several contigs. When we figured that out, the course was near its end and we did not have time to implement it properly.
+    foreach my $unmatched (@{$unmatchedContigs[$currentAssembly]}) {
+      my @tempArray = grep @{$assemblyCtgCoo[$currentAssembly]}[$_] >= $unmatched->[0], 0 .. $#{$assemblyCtgCoo[$currentAssembly]};
+      push @{$position[$currentAssembly]}, $tempArray[0]; 
     }
     
-
-    #print join ("\t", @position);
-    #print "\n";
+    #collapseAssembly chomps each assembly so that we're working on a single long sequence to be able to extract the sequences from the coordinates recieved from the .backbone file. getSubString will get the chomped sequence and all the coordinates and return the different difficult "regions" in an array. 
     push @chompedSeq, collapseAssembly($filename);
     @{$difficultContigs[$currentAssembly]} =  getSubString($chompedSeq[$currentAssembly], @{$unmatchedContigs[$currentAssembly]});
     $currentAssembly++;
 }
+
+#Extracts the unique contigs and stores it in fasta format in one single variable that is later written to output/uniqueContigs.fasta
 my $firstcount = 0;
 my $secondcount = 0;
 my $uniqueContigs = '';
@@ -123,19 +113,13 @@ open $myfile, ">output/uniqueContigs.fasta";
 print $myfile $uniqueContigs;
 close $myfile;
 
+#Run statistics on the created files.
+$statTable->load(statistics("output/commonContigs.fasta"));
+$statTable->load(statistics("output/uniqueContigs.fasta"));
+open  $myfile, ">output/statistics.txt";
+print $myfile $statTable;
+close $myfile;
 
-
-#print "\nPositions:\n";
-#foreach my $pos (@position) {
-#  for (my $i = 0; $i < scalar(@{$pos}); $i++) {
-#      #print $pos->[$i]; 
-#      #print "\t";
-#  }
-  #print "\n";
-#}
-#print Dumper @position;
-
-#print $difficultContigs[1][1];
 
 # PA
 my %pa_options;# This is an optional second parameter to pa(). If given it must contain:

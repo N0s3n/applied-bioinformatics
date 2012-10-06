@@ -33,7 +33,6 @@ sub	collapseAssembly {
 	while (<$fh>) {
 	  if ($_ !~/^>/) {
 		chomp;
-		#$joinedString = join("",$joinedString, $_);
 		$joinedString .= $_;  
 	  }
 	}
@@ -73,7 +72,4 @@ sub getSubString {
 	return @substrings;
 	#return [1,0];
 }
-
-
-
 1;

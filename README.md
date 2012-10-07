@@ -102,7 +102,7 @@ pairwisebioperl(filter) (Hash -> contigid keys start and end position array valu
 
 --------------------------------------------------------------------------------
 
-Future work:<br>
+<br>Future work:<br>
 
 Mauve part:<br>
 Currently when parsing the mauve output and obtaining the sequences, only sequences that exists in all assemblies are saved. A good thing to implement here is to be able to choose if the contig have to exists in all or maybe all except one assembly.<br>

@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use Getopt::Long;
 use File::Slurp;
-use Data::Dumper;
 use Text::Table;
 #use BIO::AlignIO;
 
@@ -38,15 +37,14 @@ $statTable->load(@statsArray);
 #print $statTable;
 
 #Run mauve
-#my $concatFilenames = join (" ", @filenames);
-#my $mauve = `progressiveMauve $concatFilenames`;
-#$mauve = mauveParser($mauve); 
-#print "$mauve";
+my $concatFilenames = join (" ", @filenames);
+my $mauve = `progressiveMauve $concatFilenames`;
+$mauve = mauveParser($mauve); 
 
 #Extract the common contigs from mauve output
-my $fil = read_file("output.txt");
-my @commonContigs = getAlignments($fil,scalar(@filenames));
-#my @commonContigs = getAlignments($mauve,scalar(@filenames));
+#my $fil = read_file("output.txt");
+#my @commonContigs = getAlignments($fil,scalar(@filenames));
+my @commonContigs = getAlignments($mauve,scalar(@filenames));
 
 #Print common contigs to file
 my $commonOutput = join "", @commonContigs; 
@@ -127,4 +125,4 @@ my %pa_options;# This is an optional second parameter to pa(). If given it must 
 # fn = filename, with no format identifier, eg. 'finalfile'
 # minl = minimum length which will take away intersection(found in subroutine position() in pairwiseAlignment.pm) two matched positions in the same contig
 # mi, minimum % identity between matched contigs 
-my $removed_ctg = pa(\@filenames);
+my $removed_ctg = pairwiseAlignment::pa(\@filenames);

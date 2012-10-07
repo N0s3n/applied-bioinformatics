@@ -122,7 +122,7 @@ sub filter {
 				#}
 				if (length($subseq) > 200) #Filters out hits shorter than the threshold (200, in this case).
 				{
-					$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."$hits");
+					$subseq = Bio::Seq->new(-seq => "$subseq", -id => "$contigname"."\.$hits");
 					$filtered->write_seq($subseq);
 				}
 			}

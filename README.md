@@ -81,7 +81,7 @@ mauveCleaner(getAlignments) (String -> Multiple alignment, Scalar -> Number of a
 backbone(unmatchedCoo) () -> (AoAoA -> Coordinates from the .backbone file where only one contig is present)<br>
 backbone(getPos) (String -> filename) -> (Array -> Starting positions of each contig)<br>
 backbone(collapseAssembly) (String- > filename) -> (String -> All contigs on one line with no headers)<br>
-backbone(getSubString) (String -> Collapsed sequence, Array -> Coordinates)
+backbone(getSubString) (String -> Collapsed sequence, Array -> Coordinates)<br>
 
 ---
 

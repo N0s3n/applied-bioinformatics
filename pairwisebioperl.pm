@@ -20,7 +20,7 @@ sub pa {
 	for my $ri (0..$#filenames) {
 	
 	    if ($qi != $ri) {
-		$nucmer_tempy = "nucmer_out_temp".$qi."_".$ri; 
+		$nucmer_tempy = "output/nucmer_out_temp".$qi."_".$ri; 
 
 		qx(nucmer -l 10 --prefix="$nucmer_tempy.pre" "$filenames[$qi]" "$filenames[$ri]");
 		qx(delta-filter -i 99.9 "$nucmer_tempy.pre.delta" > "$nucmer_tempy.delta");
@@ -33,8 +33,8 @@ sub pa {
 		%contigs = get_contigs($fhdelta);
 		close($fhdelta);
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
-		$subQ_tempy = "sub_tempQ".$qi.$ri.".fasta"; 
-		$subR_tempy = "sub_tempR".$qi.$ri.".fasta"; 
+		$subQ_tempy = "output/sub_tempQ".$qi.$ri.".fasta"; 
+		$subR_tempy = "output/sub_tempR".$qi.$ri.".fasta"; 
 		#Output now occurs in filter().
 		filter($filenames[$qi],$subQ_tempy,%contigs);
 		filter($filenames[$ri],$subR_tempy,%contigs);

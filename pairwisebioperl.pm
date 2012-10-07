@@ -44,7 +44,7 @@ sub pa {
 	    }
 	}
     }
-    qx(cp $subQ_tempy output/);
+    qx(cp $subQ_tempy output/finalpairwisebioperl.fasta);
     #qx(rm -f "$nucmer_tempy.delta");
     #return %contigs;
 }

@@ -15,12 +15,13 @@ sub pa {
     #Element 1 contains all matches from reference sequence. The matches are represented as three dimensional arrays containing contig id, start of match and end of match.
     my %contigs;
     my @filenames = @_;
+    mkdir "pabl";
 
     for my $qi (0..$#filenames) {
 	for my $ri (0..$#filenames) {
 	
 	    if ($qi != $ri) {
-		$nucmer_tempy = "output/nucmer_out_temp".$qi."_".$ri; 
+		$nucmer_tempy = "pabl/nucmer_out_temp".$qi."_".$ri; 
 
 		qx(nucmer -l 10 --prefix="$nucmer_tempy.pre" "$filenames[$qi]" "$filenames[$ri]");
 		qx(delta-filter -i 99.9 "$nucmer_tempy.pre.delta" > "$nucmer_tempy.delta");
@@ -33,8 +34,8 @@ sub pa {
 		%contigs = get_contigs($fhdelta);
 		close($fhdelta);
 		#Writes the new subsets to the new temp files. Then changes the names in the filename array.
-		$subQ_tempy = "output/sub_tempQ".$qi.$ri.".fasta"; 
-		$subR_tempy = "output/sub_tempR".$qi.$ri.".fasta"; 
+		$subQ_tempy = "pabl/sub_tempQ".$qi.$ri.".fasta"; 
+		$subR_tempy = "pabl/sub_tempR".$qi.$ri.".fasta"; 
 		#Output now occurs in filter().
 		filter($filenames[$qi],$subQ_tempy,%contigs);
 		filter($filenames[$ri],$subR_tempy,%contigs);
@@ -43,7 +44,7 @@ sub pa {
 	    }
 	}
     }
-
+    qx(cp $subQ_tempy output/);
     #qx(rm -f "$nucmer_tempy.delta");
     #return %contigs;
 }

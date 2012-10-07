@@ -4,7 +4,7 @@ CSF - Common Sequence Finder
 *synopsis 
 perl main.pl [FILE]
 
-*descripion
+*description
 CSF is a tool written in perl as a student project. The tool will take assemblies created from the same sequencing data and do a multiple set of tasks.
 
 The first thing it'll do is to calculate some basic statistics on the assemblies themselves, such as: Total length, Number Of contigs, N50, N90 and the Largest contig.
@@ -12,13 +12,13 @@ The first thing it'll do is to calculate some basic statistics on the assemblies
 The tool will try to come up with a subset of contigs that are represented in all the the assemblies. It has been implemented in two ways. 
 The first is to run the assemblies in a multiple alignment program called Mauve and extract the common contigs from the output. 
 The latter is do to pairwise alignments between two assemblies and take the intersection between them, if there are more than two assemblies it will rerun the pairwise alignment, between the intersection and the next assembly. Repeats until all the assemblies have been processed.
-There arose a fork on the pairwise alignment implementation. Both of them are present in the tool and both produces an output. 
+There arose a fork on the pairwise alignment implementation. Both of them are present in the tool and both produce an output. 
 
-In theory all three should produce the same output. But in practise that is not always the case.
+In theory all three should produce the same output. But in practice that is not always the case.
 
-An attemt to extract difficult regions is also implemented. Mauve produces a file that contains coordinates where different contigs from different assemblies matched. 
+An attempt to extract difficult regions is also implemented. Mauve produces a file that contains coordinates where different contigs from different assemblies matched. 
 If a contig only has coordinates represented in one assembly then it is a difficult region. 
-This has not been fully implemented. The tool produces seqences that are present in only one assembly. But Mauve appends several contigs and sets the coordinates from where the first contig starts and the last contig ends. The thing that is not implemented is to say from what contig/contigs the sequence came from. Currently it only says from which Assembly the difficult region is from. 
+This has not been fully implemented. The tool produces sequences that are present in only one assembly. But Mauve appends several contigs and sets the coordinates from where the first contig starts and the last contig ends. The thing that is not implemented is to say from what contig/contigs the sequence came from. Currently it only says from which Assembly the difficult region is from. 
 
 *requirements
 Perl
@@ -47,7 +47,7 @@ finalpaout.fasta
 finalpaout_removed_contigs.txt
 finalpaout_removed_contigs_total.txt
 
-pariwisebioperl:
+pairwisebioperl:
 finalpairwisebioperl.fasta
 
 

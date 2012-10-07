@@ -71,7 +71,7 @@ Written by Susanna Trollvad, Björn Viklund, Anders Sjölander and Anders Gustaf
 
 --------------------------------------------------------------------------------
 <p>
-subroutine overview:
+subroutine overview:<br>
 
 stats(statistics) (String -> filename) -> (String -> "Assembly \t Length \t Number of contigs \t N50 \t N90 \t Largest Contig") <br>
 

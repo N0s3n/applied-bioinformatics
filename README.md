@@ -66,7 +66,7 @@ finalpairwisebioperl.fasta
 <p>
 If one of the assembly files have the improper structure stats.pm(statistics) will produce an error message. 
 </p>
-<h3>author</h3>
+<h3>authors</h3>
 Written by Susanna Trollvad, Björn Viklund, Anders Sjölander and Anders Gustafsson.
 
 --------------------------------------------------------------------------------

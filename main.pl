@@ -12,6 +12,7 @@ use pairwiseAlignment qw( pa );
 use stats qw ( statistics );
 use consensus qw ( mkConsensus );
 use backbone qw ( getPos collapseAssembly unmatchedCoo );
+use pairwisebioperl qw( pa );
 
 #Declare variables
 #my $nvalue = 50;
@@ -126,3 +127,4 @@ my %pa_options;# This is an optional second parameter to pa(). If given it must 
 # minl = minimum length which will take away intersection(found in subroutine position() in pairwiseAlignment.pm) two matched positions in the same contig
 # mi, minimum % identity between matched contigs 
 my $removed_ctg = pairwiseAlignment::pa(\@filenames);
+pairwisebioperl::pa(@filenames);

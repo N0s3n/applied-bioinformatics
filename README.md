@@ -1,64 +1,76 @@
-*name
-CSF - Common Sequence Finder
+<h3>name</h3>
+<p>CSF - Common Sequence Finder</p>
 
-*synopsis 
-perl main.pl [FILE]
+<h3>synopsis</h3> 
 
-*description
-CSF is a tool written in perl as a student project. The tool will take assemblies created from the same sequencing data and do a multiple set of tasks.
+<p>perl main.pl [FILE] </p3>
 
+<h3>description</h3>
+
+<p>CSF is a tool written in perl as a student project. The tool will take assemblies created from the same sequencing data and do a multiple set of tasks.
+</p>
+<p>
 The first thing it'll do is to calculate some basic statistics on the assemblies themselves, such as: Total length, Number Of contigs, N50, N90 and the Largest contig.
-
+</p>
+<p>
 The tool will try to come up with a subset of contigs that are represented in all the the assemblies. It has been implemented in two ways. 
 The first is to run the assemblies in a multiple alignment program called Mauve and extract the common contigs from the output. 
 The latter is do to pairwise alignments between two assemblies and take the intersection between them, if there are more than two assemblies it will rerun the pairwise alignment, between the intersection and the next assembly. Repeats until all the assemblies have been processed.
 There arose a fork on the pairwise alignment implementation. Both of them are present in the tool and both produce an output. 
-
+</p>
+<p>
 In theory all three should produce the same output. But in practice that is not always the case.
-
+</p>
+<p>
 An attempt to extract difficult regions is also implemented. Mauve produces a file that contains coordinates where different contigs from different assemblies matched. 
 If a contig only has coordinates represented in one assembly then it is a difficult region. 
 This has not been fully implemented. The tool produces sequences that are present in only one assembly. But Mauve appends several contigs and sets the coordinates from where the first contig starts and the last contig ends. The thing that is not implemented is to say from what contig/contigs the sequence came from. Currently it only says from which Assembly the difficult region is from. 
+</p>
+<h3>requirements</h3>
+<p>Perl</p>
 
-*requirements
-Perl
-
-Perl-modules that have to be installed:
-
-File::Slurp
-Text::Table
-Bio::Perl
-
-*files
+<p>
+Perl-modules that have to be installed:<br>
+File::Slurp<br>
+Text::Table<br>
+Bio::Perl<br>
+</p>
+<h3>files</h3>
+<p>
 Input:
 Currently the only files that are necessary are the assembly files in fasta format.
 ProgressiveMauve is picky when reading the fasta files. The fasta header can not include white spaces, and the sequences can't be in only one line. 
-
-Output:
+</p>
+<p>
+Output:<br>
 Saves files to the output directory:
 statistics.txt
-
-Mauve files:
+</p>
+<p>
+Mauve files:<br>
 commonContigs.fasta
 uniqueContigs.fasta
-
-pairwiseAlignment:
+</p>
+<p>
+pairwiseAlignment:<br>
 finalpaout.fasta
 finalpaout_removed_contigs.txt
 finalpaout_removed_contigs_total.txt
-
-pairwisebioperl:
+</p>
+<p>
+pairwisebioperl:<br>
 finalpairwisebioperl.fasta
+</p>
 
-
-*diagnostics
+<h3>diagnostics</h3>
+<p>
 If one of the assembly files have the improper structure stats.pm(statistics) will produce an error message. 
-
-*author
+</p>
+<h3>author</h3>
 Written by Susanna Trollvad, Björn Viklund, Anders Sjölander and Anders Gustafsson.
 
 --------------------------------------------------------------------------------
-
+<p>
 subroutine overview:
 
 stats(statistics) (String -> filename) -> (String -> "Assembly \t Length \t Number of contigs \t N50 \t N90 \t Largest Contig") 
@@ -123,3 +135,4 @@ It would be very useful if the algorithm kept track of which contigs in the asse
 The module picks out the sequences common to all assemblies, but a good extension of this could be to make it so that it can also pick out sequences that are represented in most assemblies. To do this you could for example use a threshold value and after each alignment make a check if a certain contig has failed to make a match or make an intersecting match above this threshold, and then filter it away first after this.
 
 In the position subroutine of pairwiseAlignment you check if there is an intersection between matches on contig A in the current iteration and the matches against contig A in previous iteration. This makes the algorithm very strict and will remove a lot of the contigs from the assembly. A way to change this would be to remove the position function calls from the pa subroutine altogether.
+</p>
